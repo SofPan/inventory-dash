@@ -2,13 +2,22 @@
 	import NewProduct from './NewProduct.svelte';
 	import ProductCard from './ProductCard.svelte';
 
-	export let data;
-	$: products = data.products;
+	let { data } = $props();
+	let fetchedProducts = $state(null);
+	let products = $derived(fetchedProducts ?? data.products);
 
 	function getStatus(current: number, threshold: number) {
 		if (current <= threshold) return 'critical';
 		if (current <= threshold * 1.2) return 'low';
 		return 'ok';
+	}
+
+	async function refetch() {
+		const res = await fetch(
+			`${import.meta.env.VITE_API_URL}/jsonapi/node/product?sort=field_category,drupal_internal__nid`
+		);
+		const json = await res.json();
+		fetchedProducts = json.data;
 	}
 </script>
 
@@ -16,11 +25,11 @@
 	<NewProduct />
 </div>
 <div class="grid">
-	{#each products as product}
+	{#each products as product (product.id)}
 		{@const current = product.attributes.field_current_stock}
 		{@const threshold = product.attributes.field_minimum_threshold}
 		{@const status = getStatus(current, threshold)}
-		<ProductCard {status} {product} />
+		<ProductCard {status} {product} {current} {threshold} {refetch} />
 	{/each}
 </div>
 

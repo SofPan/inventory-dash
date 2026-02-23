@@ -1,25 +1,71 @@
 <script lang="ts">
+	import { PATCH } from './EditProduct';
+
 	let props = $props();
 	let isEditing = $state(false);
+	let showMessage = $state(false);
+	const product = props.product.attributes;
 
 	function setIsEditing(editStatus: boolean) {
-		console.log('clicked a button!');
 		isEditing = editStatus;
-		console.log('isEditing is', isEditing);
 		return isEditing;
+	}
+
+	function successMessage() {
+		showMessage = true;
+		setTimeout(() => {
+			showMessage = false;
+		}, 4000);
 	}
 </script>
 
-<div id={props.product.attributes.id} class="card {props.status}">
+<div id={product.id} class="card {props.status}">
 	{#if isEditing}
-		<span>We're editing!</span>
+		<h2>Editing {product.title}</h2>
+		<form
+			onsubmit={async (e) => {
+				e.preventDefault();
+
+				const data = e.target;
+				const product = {
+					data: {
+						id: props.product.id,
+						type: 'node--product',
+						attributes: {
+							title: data?.title?.value,
+							field_current_stock: data?.stock?.value,
+							field_minimum_threshold: data?.threshold?.value,
+							field_category: data?.category?.value
+						}
+					}
+				};
+				await PATCH(product);
+				setIsEditing(false);
+				successMessage();
+				props.refetch();
+				return product;
+			}}
+		>
+			<label for="title"></label>
+			<input type="text" id="title" value={product.title} />
+			<label for="category">Category:</label>
+			<input type="text" id="category" value={product.field_category} />
+			<label for="stock">New Stock:</label>
+			<input type="number" id="stock" value={props.current} />
+			<label for="threshold">Threshold:</label>
+			<input type="number" id="threshold" value={props.threshold} />
+			<button type="submit">Submit</button>
+		</form>
 		<button onclick={() => setIsEditing(false)}>Cancel</button>
 	{:else}
-		<h2>{props.product.attributes.title}</h2>
+		{#if showMessage}
+			<span>Product Updated Successfully!</span>
+		{/if}
+		<h2>{product.title}</h2>
 		<p>Current Stock: {props.current}</p>
 		<p>Minimum Threshold: {props.threshold}</p>
-		{#if props.product.attributes.field_category}
-			<p>Category: {props.product.attributes.field_category}</p>
+		{#if product.field_category}
+			<p>Category: {product.field_category}</p>
 		{/if}
 		<div class="flex">
 			<span class="badge">{props.status.toUpperCase()}</span>
