@@ -1,9 +1,11 @@
 <script lang="ts">
 	import NewProduct from './NewProduct.svelte';
 	import ProductCard from './ProductCard.svelte';
+	import SummaryBar from './SummaryBar.svelte';
 
 	let { data } = $props();
 	let fetchedProducts = $state(null);
+	let filterText = $state('all');
 	let products = $derived(fetchedProducts ?? data.products);
 
 	function getStatus(current: number, threshold: number) {
@@ -19,9 +21,24 @@
 		const json = await res.json();
 		fetchedProducts = json.data;
 	}
+
+	function filteredProducts(productList, status: string) {
+		return productList.filter((product) => {
+			const current = product.attributes.field_current_stock;
+			const threshold = product.attributes.field_minimum_threshold;
+			const prodStatus = getStatus(current, threshold);
+			return prodStatus === status;
+		});
+	}
+
+	function setFilter(filter: string) {
+		filterText = filter;
+		return filterText;
+	}
 </script>
 
 <div>
+	<SummaryBar {products} {filteredProducts} {setFilter} {filterText} />
 	<NewProduct />
 </div>
 <div class="grid">
@@ -29,7 +46,9 @@
 		{@const current = product.attributes.field_current_stock}
 		{@const threshold = product.attributes.field_minimum_threshold}
 		{@const status = getStatus(current, threshold)}
-		<ProductCard {status} {product} {current} {threshold} {refetch} />
+		<!-- TODO: Replace isVisible with refetch logic -->
+		{@const isVisible = filterText === 'all' ? true : filterText === status}
+		<ProductCard {isVisible} {status} {product} {current} {threshold} {refetch} />
 	{/each}
 </div>
 

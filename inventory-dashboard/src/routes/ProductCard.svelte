@@ -19,7 +19,7 @@
 	}
 </script>
 
-<div id={product.id} class="card {props.status}">
+<div id={product.id} class="card {props.status} {props.isVisible === false ? 'hidden' : ''}">
 	{#if isEditing}
 		<h2>Editing {product.title}</h2>
 		<form
@@ -75,6 +75,10 @@
 </div>
 
 <style>
+	.hidden {
+		display: none !important;
+	}
+
 	.card {
 		border-radius: 8px;
 		padding: 1rem;
